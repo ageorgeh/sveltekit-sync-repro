@@ -1,0 +1,19 @@
+{
+  "name": "sveltekit-sync-repro-app",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test:node": "NODE_OPTIONS=--import=../loader/register.mjs node --input-type=module -e \"const { marker } = await import('@repro/env-dependency'); if (marker !== 'resolved by Node loader') throw new Error('unexpected marker: ' + marker); console.log('native Node control: PASS');\"",
+    "sync": "NODE_OPTIONS=--import=../loader/register.mjs svelte-kit sync"
+  },
+  "dependencies": {
+    "@repro/env-dependency": "workspace:*"
+  },
+  "devDependencies": {
+    "@sveltejs/kit": "2.70.3",
+    "@sveltejs/vite-plugin-svelte": "7.3.0",
+    "svelte": "5.57.0",
+    "typescript": "5.9.3",
+    "vite": "8.2.2"
+  }
+}

@@ -6,11 +6,13 @@ settings:
 
 importers:
 
-  .:
+  .: {}
+
+  app:
     dependencies:
-      '@repro/env-package':
+      '@repro/env-dependency':
         specifier: workspace:*
-        version: link:packages/env-package
+        version: link:../packages/env-dependency
     devDependencies:
       '@sveltejs/kit':
         specifier: 2.70.3
@@ -28,7 +30,7 @@ importers:
         specifier: 8.2.2
         version: 8.2.2
 
-  packages/env-package: {}
+  packages/env-dependency: {}
 
 packages:
 

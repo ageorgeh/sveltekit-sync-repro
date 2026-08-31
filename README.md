@@ -1,90 +1,75 @@
-# SvelteKit `src/env.ts` loader reproduction
+# SvelteKit `src/env.ts` workspace-link reproduction
 
-This is a minimal pnpm workspace showing that a workspace-linked dependency of
-SvelteKit's `src/env.ts` is evaluated by Vite, while the same dependency is
-externalized when installed from a package tarball.
+This is a standalone pnpm workspace showing that a dependency imported by
+SvelteKit's `src/env.ts` behaves differently when it is workspace-linked.
+SvelteKit evaluates the file with an internal Vite server; Vite normally
+externalizes installed server packages, but does not externalize linked
+workspace packages by default. The linked package is therefore transformed by
+Vite, whose isolated server cannot use the Node loader hook that resolves its
+bare `repro-loader-target` import.
 
-The workspace package imports `repro-loader:runtime-config`. That is not a real
-package: [node-loader.mjs](./node-loader.mjs) resolves it with Node's
-`registerHooks` API. The import therefore works in native Node, but Vite cannot
-resolve it when it evaluates the linked package. `src/env.ts` uses the imported
-value as a description so the dependency is executed during sync.
+## Reproduction
 
-## Reproduce
-
-Requirements: Node.js `>=22.15.0` and pnpm `11`.
-
-Install the workspace dependencies:
+Requires Node.js `>=22.15.0` and pnpm `11`.
 
 ```sh
 pnpm install
+pnpm test:node
+pnpm repro
 ```
 
-Native Node resolution works:
-
-```sh
-pnpm native
-# native import passed: resolved by Node registerHooks
-```
-
-The workspace-linked package fails during `svelte-kit sync`:
-
-```sh
-pnpm sync
-```
-
-Expected result: exit code `1`, including:
+Expected results:
 
 ```text
-Cannot find module 'repro-loader:runtime-config' imported from .../packages/env-package/src/index.js
+pnpm test:node  -> PASS
+pnpm repro      -> FAIL
 ```
 
-The root install links the package directly to `packages/env-package`. Vite's
-SSR defaults inline linked workspace packages, so the custom import is handled
-by Vite instead of native Node.
+The native control imports `@repro/env-dependency` with
+`loader/register.mjs`, and verifies `marker === 'resolved by Node loader'`.
+The unpatched `pnpm repro` fails while evaluating the linked package because
+Vite cannot resolve `repro-loader-target`.
 
-You can see the link with `readlink node_modules/@repro/env-package`.
+The relevant error is:
 
-## Installed-package comparison
-
-Pack the same package and run an otherwise equivalent app outside the workspace
-dependency graph:
-
-```sh
-pnpm --filter @repro/env-package pack --pack-destination .repro
-pnpm --dir fixtures/installed-app --ignore-workspace install --force
-pnpm --dir fixtures/installed-app --ignore-workspace run sync
+```text
+Cannot find module 'repro-loader-target' imported from '.../packages/env-dependency/index.js'
 ```
 
-The last command exits `0`. The fixture installs the tarball into
-`node_modules` rather than linking `packages/env-package`, so Vite externalizes
-it and Node's registered resolver handles `repro-loader:runtime-config`.
+## Expected
 
-## Local SvelteKit patch
+A dependency of `src/env.ts` should retain normal server-side Node package
+execution semantics in this isolated env loader, or at least should not behave
+differently solely because it is workspace-linked.
 
-The checked-in [patch](./patches/@sveltejs__kit@2.70.3.patch) adds
-`ssr: { external: true }` to the internal `vite.createServer({ ... })` used by
-SvelteKit's explicit environment loader. Enable it temporarily with the
-alternate workspace file:
+## Actual
 
-```sh
-cp pnpm-workspace.yaml /tmp/sveltekit-sync-repro-pnpm-workspace.yaml
-cp pnpm-workspace.patched.yaml pnpm-workspace.yaml
-pnpm install
-pnpm sync
+Native Node import succeeds, while `svelte-kit sync` fails resolving
+`repro-loader-target` from the linked `@repro/env-dependency` package.
+
+## Workaround / investigation
+
+SvelteKit 2.70.3's `load_explicit_env` in
+`node_modules/@sveltejs/kit/src/core/env.js` creates an internal Vite server
+with `configFile: false` and no `ssr.external` setting. The local reference
+patch in [sveltekit-load-explicit-env.patch](./sveltekit-load-explicit-env.patch)
+adds:
+
+```js
+ssr: {
+  external: true
+}
 ```
 
-With the patch enabled, `pnpm sync` exits `0`: the linked package is treated as
-an external SSR dependency and is loaded by native Node, where the
-`registerHooks` resolver is active. Restore the unpatched state with:
+Applying that change to the installed SvelteKit package makes the same linked
+reproduction pass, confirming that SSR externalization is the relevant
+difference. This is only an investigation workaround, not a claim about the
+maintainers' desired implementation. The default reproduction remains
+unpatched and is not configured to apply the patch automatically.
 
-```sh
-cp /tmp/sveltekit-sync-repro-pnpm-workspace.yaml pnpm-workspace.yaml
-pnpm install
-```
-
-The repro pins the published stable `@sveltejs/kit@2.70.3`. Its matching
-upstream source is `packages/kit/src/core/env.js`, where `load_explicit_env`
-creates the Vite server with `configFile: false` and no SSR externalization.
-The current upstream `main` source inspected for this repro has the same call
-shape; the patch is intentionally limited to that option.
+Vite 8.2.2's default SSR externalization checks that a resolved package is
+inside `node_modules`; the workspace symlink resolves to
+`packages/env-dependency`, so it is kept in Vite's module runner. Current
+upstream SvelteKit [`main` source](https://github.com/sveltejs/kit/blob/main/packages/kit/src/core/env.js)
+was checked on 2026-09-01 and still has the same `load_explicit_env` server
+options: `configFile: false` without `ssr.external`.

@@ -1,11 +1,13 @@
 import { registerHooks } from 'node:module';
 
+const target = new URL('./target.mjs', import.meta.url).href;
+
 registerHooks({
   resolve(specifier, context, nextResolve) {
-    if (specifier === 'repro-loader:runtime-config') {
+    if (specifier === 'repro-loader-target') {
       return {
-        shortCircuit: true,
-        url: 'data:text/javascript,export default "resolved by Node registerHooks"'
+        url: target,
+        shortCircuit: true
       };
     }
 

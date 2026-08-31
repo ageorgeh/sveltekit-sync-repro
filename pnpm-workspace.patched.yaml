@@ -1,0 +1,4 @@
+packages:
+  - packages/*
+patchedDependencies:
+  '@sveltejs/kit@2.70.3': patches/@sveltejs__kit@2.70.3.patch

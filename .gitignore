@@ -1,0 +1,7 @@
+node_modules/
+.svelte-kit/
+dist/
+*.tgz
+.repro/
+fixtures/installed-app/node_modules/
+fixtures/installed-app/pnpm-lock.yaml

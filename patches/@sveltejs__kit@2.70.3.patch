@@ -1,0 +1,14 @@
+diff --git a/src/core/env.js b/src/core/env.js
+index 73ce309a1a0d4c58c3de7a9ad6ff5f221eede717..f68e771a89fbb471993ac81559e2f9b7c0171c0d 100644
+--- a/src/core/env.js
++++ b/src/core/env.js
+@@ -56,6 +56,9 @@ export async function load_explicit_env(kit, file, mode) {
+ 
+ 	const server = await vite.createServer({
+ 		configFile: false,
++		ssr: {
++			external: true
++		},
+ 		logLevel: 'silent',
+ 		mode,
+ 		define: {

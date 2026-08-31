@@ -1,0 +1,21 @@
+{
+  "name": "installed-app",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.15.0"
+  },
+  "scripts": {
+    "sync": "node --import ../../node-loader.mjs ./node_modules/@sveltejs/kit/svelte-kit.js sync"
+  },
+  "dependencies": {
+    "@repro/env-package": "file:../../.repro/repro-env-package-1.0.0.tgz"
+  },
+  "devDependencies": {
+    "@sveltejs/kit": "2.70.3",
+    "@sveltejs/vite-plugin-svelte": "7.3.0",
+    "svelte": "5.57.0",
+    "typescript": "5.9.3",
+    "vite": "8.2.2"
+  }
+}

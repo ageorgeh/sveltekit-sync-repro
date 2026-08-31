@@ -1,0 +1,23 @@
+{
+  "name": "sveltekit-sync-repro",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.15.0"
+  },
+  "packageManager": "pnpm@11.11.0",
+  "scripts": {
+    "native": "node --import ./node-loader.mjs ./scripts/native-import.mjs",
+    "sync": "node --import ./node-loader.mjs ./node_modules/@sveltejs/kit/svelte-kit.js sync"
+  },
+  "dependencies": {
+    "@repro/env-package": "workspace:*"
+  },
+  "devDependencies": {
+    "@sveltejs/kit": "2.70.3",
+    "@sveltejs/vite-plugin-svelte": "7.3.0",
+    "svelte": "5.57.0",
+    "typescript": "5.9.3",
+    "vite": "8.2.2"
+  }
+}

@@ -30,6 +30,9 @@ The native control imports `@repro/env-dependency` with
 The unpatched `pnpm repro` fails while evaluating the linked package because
 Vite cannot resolve `repro-loader-target`.
 
+The app passes its SvelteKit options directly to `sveltekit(...)` in
+`app/vite.config.js`; no `svelte.config.js` file is needed.
+
 The relevant error is:
 
 ```text

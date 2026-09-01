@@ -50,7 +50,7 @@ differently solely because it is workspace-linked.
 Native Node import succeeds, while `svelte-kit sync` fails resolving
 `repro-loader-target` from the linked `@repro/env-dependency` package.
 
-## Workaround / investigation
+## Workaround
 
 SvelteKit 2.70.3's `load_explicit_env` in
 `node_modules/@sveltejs/kit/src/core/env.js` creates an internal Vite server
@@ -60,19 +60,9 @@ adds:
 
 ```js
 ssr: {
-  external: true
+  external: true;
 }
 ```
 
 Applying that change to the installed SvelteKit package makes the same linked
-reproduction pass, confirming that SSR externalization is the relevant
-difference. This is only an investigation workaround, not a claim about the
-maintainers' desired implementation. The default reproduction remains
-unpatched and is not configured to apply the patch automatically.
-
-Vite 8.2.2's default SSR externalization checks that a resolved package is
-inside `node_modules`; the workspace symlink resolves to
-`packages/env-dependency`, so it is kept in Vite's module runner. Current
-upstream SvelteKit [`main` source](https://github.com/sveltejs/kit/blob/main/packages/kit/src/core/env.js)
-was checked on 2026-09-01 and still has the same `load_explicit_env` server
-options: `configFile: false` without `ssr.external`.
+reproduction pass
